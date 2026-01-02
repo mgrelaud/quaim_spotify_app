@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1767343550768,
+      "tag": "0000_nostalgic_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1767343713055,
+      "tag": "0001_secret_bill_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1767344790286,
+      "tag": "0002_breezy_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1767344842876,
+      "tag": "0003_white_rhino",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+# ==============================================
+# Caddy Configuration - Quai M Spotify Matcher
+# ==============================================
+
+# Remplacez "votredomaine.com" par votre nom de domaine réel
+quaim-matcher.votredomaine.com {
+    # Certificat SSL automatique via Let's Encrypt
+    # Caddy gère automatiquement l'obtention et le renouvellement
+
+    # Logs
+    log {
+        output file /var/log/caddy/quaim-matcher-access.log
+        format json
+    }
+
+    # Encodage (compression)
+    encode gzip zstd
+
+    # Headers de sécurité
+    header {
+        # Protection XSS
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        
+        # Politique de sécurité du contenu
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com;"
+        
+        # HSTS (force HTTPS)
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        
+        # Permissions
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        
+        # Referrer
+        Referrer-Policy "strict-origin-when-cross-origin"
+        
+        # Supprime les headers serveur
+        -Server
+    }
+
+    # Reverse proxy vers l'application Node.js
+    reverse_proxy localhost:3000 {
+        # Headers pour préserver les informations du client
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+        
+        # Timeouts
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 30s
+            read_timeout 60s
+        }
+        
+        # Health check
+        health_uri /api/health
+        health_interval 30s
+        health_timeout 5s
+    }
+
+    # Gestion des erreurs
+    handle_errors {
+        @5xx expression `{err.status_code} >= 500 && {err.status_code} < 600`
+        respond @5xx "Service temporairement indisponible. Réessayez dans quelques instants." 503
+        
+        @4xx expression `{err.status_code} >= 400 && {err.status_code} < 500`
+        respond @4xx "Ressource non trouvée." 404
+    }
+
+    # Rate limiting (optionnel, nécessite un plugin)
+    # rate_limit {
+    #     zone dynamic {
+    #         key {remote_host}
+    #         events 100
+    #         window 1m
+    #     }
+    # }
+}
+
+# Configuration pour HTTP (redirection automatique vers HTTPS)
+http://quaim-matcher.votredomaine.com {
+    redir https://{host}{uri} permanent
+}
+
+# ==============================================
+# Configuration alternative pour développement local
+# ==============================================
+
+# Décommentez cette section pour tester en local sans SSL
+# localhost:80 {
+#     reverse_proxy localhost:3000
+# }
+
+# ==============================================
+# Configuration avec sous-domaine API séparé (optionnel)
+# ==============================================
+
+# Si vous voulez séparer l'API du frontend
+# api.quaim-matcher.votredomaine.com {
+#     encode gzip zstd
+#     
+#     # CORS headers
+#     header {
+#         Access-Control-Allow-Origin "https://quaim-matcher.votredomaine.com"
+#         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+#         Access-Control-Allow-Headers "Content-Type, Authorization"
+#         Access-Control-Max-Age "3600"
+#     }
+#     
+#     # Handle preflight requests
+#     @options method OPTIONS
+#     respond @options 204
+#     
+#     reverse_proxy localhost:3000
+# }
+
+# ==============================================
+# Configuration multi-environnement
+# ==============================================
+
+# Production
+# quaim-matcher.votredomaine.com {
+#     import common_config
+#     reverse_proxy localhost:3000
+# }
+
+# Staging
+# staging.quaim-matcher.votredomaine.com {
+#     import common_config
+#     reverse_proxy localhost:3001
+# }
+
+# Snippet réutilisable
+# (common_config) {
+#     encode gzip zstd
+#     log {
+#         output file /var/log/caddy/access.log
+#     }
+#     header {
+#         X-Content-Type-Options "nosniff"
+#         X-Frame-Options "SAMEORIGIN"
+#         Strict-Transport-Security "max-age=31536000"
+#     }
+# }

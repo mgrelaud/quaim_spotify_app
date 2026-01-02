@@ -1,0 +1,1 @@
+ALTER TABLE `match_scores` ADD `similarArtistBonus` varchar(10);
