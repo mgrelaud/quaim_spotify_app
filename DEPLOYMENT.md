@@ -1,3 +1,7 @@
+git add .
+git commit -m "Votre message descriptif ici"
+git push
+
 # Guide de Déploiement - Quai M Spotify Matcher
 
 Ce guide vous explique comment déployer l'application en développement et en production avec une configuration unifiée.
