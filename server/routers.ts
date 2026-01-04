@@ -131,6 +131,29 @@ export const appRouter = router({
       };
     }),
   }),
+
+  matching: router({
+    // Get all matches for the current user
+    getMatches: protectedProcedure.query(async ({ ctx }) => {
+      const { calculateAllMatches } = await import("./matching");
+      const { getEventById } = await import("./db");
+      
+      const matches = await calculateAllMatches(ctx.user.id);
+      
+      // Enrich matches with event data
+      const enrichedMatches = await Promise.all(
+        matches.map(async (match) => {
+          const event = await getEventById(match.eventId);
+          return {
+            ...match,
+            event,
+          };
+        })
+      );
+      
+      return enrichedMatches;
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
